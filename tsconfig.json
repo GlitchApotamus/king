@@ -1,0 +1,8 @@
+{
+    "extends": "./.sern/tsconfig.json",
+    "compilerOptions": {
+        "ignoreDeprecations": "6.0",
+        "types": ["bun"]
+    },
+    "include": ["src", "./prisma.config.ts", "src/events/client/ready.ts"]
+}

@@ -1,0 +1,15 @@
+version: "3.9"
+
+services:
+  bot:
+    build: .
+    image: bot:latest
+    container_name: king
+    env_file:
+      - .env
+    networks:
+      - db-net
+
+networks:
+  db-net:
+    external: true

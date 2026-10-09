@@ -1,0 +1,970 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "KingShot.net - API Documentation",
+    "version": "1.0.0",
+    "description": "API documentation for KingShot.net - Kingdom vs Kingdom match tracking, player information, and gift codes",
+    "contact": {
+      "name": "API Support"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api",
+      "description": "API Base URL"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Player",
+      "description": "Player information endpoints"
+    },
+    {
+      "name": "KVK",
+      "description": "Kingdom vs Kingdom related endpoints"
+    },
+    {
+      "name": "Gift Codes",
+      "description": "Gift code management"
+    },
+    {
+      "name": "Kingdom Tracker",
+      "description": "Kingdom age and server tracking"
+    },
+    {
+      "name": "System",
+      "description": "System health and status endpoints"
+    }
+  ],
+  "paths": {
+    "/player-info": {
+      "get": {
+        "tags": [
+          "Player"
+        ],
+        "summary": "Get player information",
+        "description": "Retrieve player information by player ID. Rate limited to 6 requests per minute.",
+        "operationId": "getPlayerInfo",
+        "parameters": [
+          {
+            "name": "playerId",
+            "in": "query",
+            "description": "Player ID to lookup",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "example": "8767319"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Player info retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlayerInfoResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "status": "success",
+                      "data": {
+                        "playerId": "8767319",
+                        "name": "PlayerName",
+                        "kingdom": 1234,
+                        "level": 25,
+                        "levelRendered": "25",
+                        "levelRenderedDetailed": "Level 25",
+                        "levelImage": "url-to-level-image",
+                        "profilePhoto": "url-to-avatar"
+                      },
+                      "message": "Player info retrieved successfully",
+                      "timestamp": "2026-01-01T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad request - Player ID missing or invalid",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                },
+                "examples": {
+                  "playerNotFound": {
+                    "value": {
+                      "status": "fail",
+                      "message": "Player not found.",
+                      "meta": {
+                        "code": "VALIDATION_ERROR",
+                        "errorKey": "PLAYER_NOT_FOUND"
+                      },
+                      "timestamp": "2026-01-01T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Too many requests",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kvk/seasons": {
+      "get": {
+        "tags": [
+          "KVK"
+        ],
+        "summary": "Get all KVK seasons",
+        "description": "Retrieve all Kingdom vs Kingdom seasons ordered by date (newest first)",
+        "operationId": "getKvkSeasons",
+        "responses": {
+          "200": {
+            "description": "Seasons retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SeasonsResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "status": "success",
+                      "data": [
+                        {
+                          "season_id": 9,
+                          "season_date": "2026-01-01T00:00:00.000Z",
+                          "kvk_title": "Season 9",
+                          "description": "Season 9 Description"
+                        },
+                        {
+                          "season_id": 8,
+                          "season_date": "2026-01-01T00:00:00.000Z",
+                          "kvk_title": "Season 8",
+                          "description": "Season 8 Description"
+                        }
+                      ],
+                      "message": "Seasons retrieved successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kvk/matches": {
+      "get": {
+        "tags": [
+          "KVK"
+        ],
+        "summary": "Get KVK matches",
+        "description": "Retrieve Kingdom vs Kingdom matches with optional filtering and pagination",
+        "operationId": "getKvkMatches",
+        "parameters": [
+          {
+            "name": "season",
+            "in": "query",
+            "description": "Filter by season ID (supports comma-separated multiple IDs)",
+            "required": false,
+            "schema": {
+              "type": "string"
+            },
+            "example": "9"
+          },
+          {
+            "name": "kingdom_a",
+            "in": "query",
+            "description": "Filter by first kingdom",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 23
+          },
+          {
+            "name": "kingdom_b",
+            "in": "query",
+            "description": "Filter by second kingdom",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            },
+            "example": 25
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "description": "Filter by castle capture status",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "captured",
+                "defended"
+              ]
+            },
+            "example": "captured"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "Page number",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "example": 1
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Items per page",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 21,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "example": 21
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matches retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MatchesResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "status": "success",
+                      "data": [
+                        {
+                          "kvk_id": 1,
+                          "season_id": 9,
+                          "kingdom_a": 23,
+                          "kingdom_b": 25,
+                          "prep_winner": 23,
+                          "castle_winner": 25,
+                          "attacker": 23,
+                          "defender": 25,
+                          "castle_captured": false,
+                          "season_date": "2026-01-01",
+                          "kvk_title": "Season 9",
+                          "description": "Season 9 Description",
+                          "created_at": "2026-01-01T00:00:00.000Z",
+                          "updated_at": "2026-01-01T00:00:00.000Z"
+                        }
+                      ],
+                      "pagination": {
+                        "total": 100,
+                        "page": 1,
+                        "limit": 21,
+                        "totalPages": 5,
+                        "hasMore": true
+                      },
+                      "message": "Matches retrieved successfully"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/gift-codes": {
+      "get": {
+        "tags": [
+          "Gift Codes"
+        ],
+        "summary": "Get active gift codes",
+        "description": "Retrieve all active gift codes that are not expired",
+        "operationId": "getGiftCodes",
+        "responses": {
+          "200": {
+            "description": "Gift codes retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GiftCodesResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "status": "success",
+                      "data": {
+                        "giftCodes": [
+                          {
+                            "id": 1,
+                            "code": "VIP777",
+                            "expiresAt": "2026-12-31T23:59:59.000Z",
+                            "createdAt": "2026-01-01T00:00:00.000Z"
+                          },
+                          {
+                            "id": 2,
+                            "code": "GIVEUAGIFT",
+                            "expiresAt": null,
+                            "createdAt": "2026-01-01T00:00:00.000Z"
+                          }
+                        ],
+                        "total": 2,
+                        "activeCount": 2,
+                        "expiredCount": 0
+                      },
+                      "message": "Gift codes retrieved successfully",
+                      "timestamp": "2026-01-01T00:00:00.000Z"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/kingdom-tracker": {
+      "get": {
+        "tags": [
+          "Kingdom Tracker"
+        ],
+        "summary": "Get kingdom servers",
+        "description": "Retrieve verified kingdom server information including open dates and metadata",
+        "operationId": "getKingdomTracker",
+        "parameters": [
+          {
+            "name": "kingdomId",
+            "in": "query",
+            "description": "Filter by specific kingdom ID (returns single server if found)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 9999
+            },
+            "example": 1234
+          },
+          {
+            "name": "recent",
+            "in": "query",
+            "description": "Filter servers opened in last N days (e.g., 7 for last 7 days)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1
+            },
+            "example": 7
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "description": "Limit number of results (max 20)",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 20,
+              "default": 20
+            },
+            "example": 10
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "description": "Sort by field and order (e.g., 'openTime-desc', 'kingdomId-asc')",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "enum": [
+                "openTime-asc",
+                "openTime-desc",
+                "kingdomId-asc",
+                "kingdomId-desc"
+              ],
+              "default": "openTime-desc"
+            },
+            "example": "openTime-desc"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Kingdom servers retrieved successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/KingdomTrackerResponse"
+                },
+                "examples": {
+                  "success": {
+                    "value": {
+                      "status": "success",
+                      "data": {
+                        "servers": [
+                          {
+                            "id": 1,
+                            "kingdomId": 1234,
+                            "openTime": "2026-01-01T00:00:00.000Z",
+                            "isExclusive": false,
+                            "languages": [
+                              "EN"
+                            ],
+                            "isVerified": true
+                          }
+                        ],
+                        "total": 1,
+                        "filters": {
+                          "recent": null,
+                          "limit": 20,
+                          "sort": "openTime-desc"
+                        }
+                      },
+                      "message": "Retrieved 1 kingdom servers"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorResponse"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "tags": [
+          "System"
+        ],
+        "summary": "Health check",
+        "description": "Check the health status of the API and database connection",
+        "operationId": "healthCheck",
+        "responses": {
+          "200": {
+            "description": "Service is healthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "examples": {
+                  "healthy": {
+                    "value": {
+                      "status": "healthy",
+                      "timestamp": "2026-01-01T00:00:00.000Z",
+                      "checks": {
+                        "database": "ok",
+                        "server": "ok"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "503": {
+            "description": "Service is unhealthy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthResponse"
+                },
+                "examples": {
+                  "unhealthy": {
+                    "value": {
+                      "status": "unhealthy",
+                      "timestamp": "2026-01-01T00:00:00.000Z",
+                      "checks": {
+                        "database": "error",
+                        "server": "ok"
+                      },
+                      "error": "Database connection failed"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "PlayerInfoResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "playerId": {
+                "type": "string",
+                "description": "Unique player identifier"
+              },
+              "name": {
+                "type": "string",
+                "description": "Player nickname"
+              },
+              "kingdom": {
+                "type": "integer",
+                "description": "Kingdom number"
+              },
+              "level": {
+                "type": "integer",
+                "description": "Player level"
+              },
+              "levelRendered": {
+                "type": "string",
+                "description": "Formatted level display"
+              },
+              "levelRenderedDetailed": {
+                "type": "string",
+                "description": "Detailed level display"
+              },
+              "levelImage": {
+                "type": "string",
+                "description": "URL to level badge image"
+              },
+              "profilePhoto": {
+                "type": "string",
+                "description": "URL to player avatar"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "SeasonsResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "season_id": {
+                  "type": "integer",
+                  "description": "Unique season identifier"
+                },
+                "season_date": {
+                  "type": "string",
+                  "format": "date-time",
+                  "description": "Season start date"
+                },
+                "kvk_title": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Season title"
+                },
+                "description": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Season description"
+                }
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "MatchesResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "kvk_id": {
+                  "type": "integer",
+                  "description": "Unique match identifier"
+                },
+                "season_id": {
+                  "type": "integer",
+                  "description": "Season identifier"
+                },
+                "kingdom_a": {
+                  "type": "integer",
+                  "description": "First kingdom number"
+                },
+                "kingdom_b": {
+                  "type": "integer",
+                  "description": "Second kingdom number"
+                },
+                "prep_winner": {
+                  "type": "integer",
+                  "description": "Kingdom that won the prep phase"
+                },
+                "castle_winner": {
+                  "type": "integer",
+                  "description": "Kingdom that won the castle phase"
+                },
+                "attacker": {
+                  "type": "integer",
+                  "description": "Attacking kingdom (prep winner)"
+                },
+                "defender": {
+                  "type": "integer",
+                  "description": "Defending kingdom"
+                },
+                "castle_captured": {
+                  "type": "boolean",
+                  "description": "Whether the castle was captured"
+                },
+                "season_date": {
+                  "type": "string",
+                  "format": "date",
+                  "description": "Season date"
+                },
+                "kvk_title": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Season title"
+                },
+                "description": {
+                  "type": "string",
+                  "nullable": true,
+                  "description": "Season description"
+                },
+                "created_at": {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                "updated_at": {
+                  "type": "string",
+                  "format": "date-time"
+                }
+              }
+            }
+          },
+          "pagination": {
+            "type": "object",
+            "properties": {
+              "total": {
+                "type": "integer",
+                "description": "Total number of matches"
+              },
+              "page": {
+                "type": "integer",
+                "description": "Current page number"
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Items per page"
+              },
+              "totalPages": {
+                "type": "integer",
+                "description": "Total number of pages"
+              },
+              "hasMore": {
+                "type": "boolean",
+                "description": "Whether there are more pages"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "GiftCodesResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "giftCodes": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Gift code ID"
+                    },
+                    "code": {
+                      "type": "string",
+                      "description": "Gift code string"
+                    },
+                    "expiresAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "nullable": true,
+                      "description": "Expiration date (null if no expiration)"
+                    },
+                    "createdAt": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Creation date"
+                    }
+                  }
+                }
+              },
+              "total": {
+                "type": "integer",
+                "description": "Total number of gift codes"
+              },
+              "activeCount": {
+                "type": "integer",
+                "description": "Number of active codes"
+              },
+              "expiredCount": {
+                "type": "integer",
+                "description": "Number of expired codes"
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "KingdomTrackerResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "success"
+            ]
+          },
+          "data": {
+            "type": "object",
+            "properties": {
+              "servers": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "id": {
+                      "type": "integer",
+                      "description": "Unique server entry ID"
+                    },
+                    "kingdomId": {
+                      "type": "integer",
+                      "description": "Kingdom number (1-9999)"
+                    },
+                    "openTime": {
+                      "type": "string",
+                      "format": "date-time",
+                      "description": "Server open date and time"
+                    },
+                    "isExclusive": {
+                      "type": "boolean",
+                      "description": "Whether this is an exclusive server"
+                    },
+                    "languages": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      },
+                      "nullable": true,
+                      "description": "Supported languages"
+                    },
+                    "isVerified": {
+                      "type": "boolean",
+                      "description": "Whether this entry has been verified by admin"
+                    }
+                  }
+                }
+              },
+              "total": {
+                "type": "integer",
+                "description": "Total number of servers matching the filters"
+              },
+              "filters": {
+                "type": "object",
+                "properties": {
+                  "recent": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Number of days for recent filter"
+                  },
+                  "limit": {
+                    "type": "integer",
+                    "nullable": true,
+                    "description": "Result limit applied"
+                  },
+                  "sort": {
+                    "type": "string",
+                    "description": "Sort order applied"
+                  }
+                }
+              }
+            }
+          },
+          "message": {
+            "type": "string"
+          }
+        }
+      },
+      "HealthResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "healthy",
+              "unhealthy"
+            ],
+            "description": "Overall health status"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time",
+            "description": "Timestamp of the health check"
+          },
+          "checks": {
+            "type": "object",
+            "properties": {
+              "database": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "error"
+                ],
+                "description": "Database connection status"
+              },
+              "server": {
+                "type": "string",
+                "enum": [
+                  "ok",
+                  "error"
+                ],
+                "description": "Server status"
+              }
+            }
+          },
+          "error": {
+            "type": "string",
+            "nullable": true,
+            "description": "Error message (only present when unhealthy)"
+          }
+        }
+      },
+      "ErrorResponse": {
+        "type": "object",
+        "properties": {
+          "status": {
+            "type": "string",
+            "enum": [
+              "error",
+              "fail"
+            ]
+          },
+          "message": {
+            "type": "string",
+            "description": "Error message"
+          },
+          "data": {
+            "type": "null"
+          },
+          "meta": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "string",
+                "description": "Error code"
+              },
+              "errorKey": {
+                "type": "string",
+                "description": "Translation key for client-side i18n"
+              },
+              "details": {
+                "description": "Additional error details"
+              }
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      }
+    }
+  }
+}

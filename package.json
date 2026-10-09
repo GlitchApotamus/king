@@ -1,0 +1,33 @@
+{
+	"name": "king",
+	"version": "1.0.0",
+	"private": true,
+	"description": "",
+	"main": "src/index.ts",
+	"scripts": {
+		"build": "sern build",
+		"start": "bun run src/index.ts",
+		"db:gen": "prisma generate",
+		"db:push": "prisma db push"
+	},
+	"keywords": [
+		"typescript",
+		"sern",
+		"discord.js"
+	],
+	"dependencies": {
+		"@prisma/adapter-pg": "^7.10.0",
+		"@prisma/client": "^7.10.0",
+		"@sern/handler": "^4.2.6",
+		"@sern/publisher": "^1.1.4",
+		"discord.js": "^14.27.0",
+		"dotenv": "^18.0.6"
+	},
+	"devDependencies": {
+		"@types/bun": "^1.4.2",
+		"@types/node": "^26.6.4",
+		"prisma": "7.10.0",
+		"typescript": "7.0.2"
+	},
+	"type": "module"
+}

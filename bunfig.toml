@@ -1,0 +1,8 @@
+[install]
+lockfile = { save = true }
+
+[env]
+file = true
+
+[run]
+shell = "bun"

@@ -1,0 +1,31 @@
+datasource db {
+    provider = "postgresql"
+}
+
+generator client {
+    provider = "prisma-client-js"
+}
+
+model Guild {
+    id                   String   @id
+    name                 String
+    codeCheckerEnabled   Boolean  @default(false)
+    codeCheckerChannelId String?
+    codeCheckerMessageId String?
+    createdAt            DateTime @default(now())
+}
+
+model User {
+    id        String    @id
+    username  String
+    accounts  Account[]
+    createdAt DateTime  @default(now())
+}
+
+model Account {
+    id         String   @id
+    playerName String
+    createdAt  DateTime @default(now())
+    user       User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+    userId     String?
+}
