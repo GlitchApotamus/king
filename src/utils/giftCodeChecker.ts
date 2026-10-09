@@ -19,24 +19,18 @@ export function buildGiftCodeCheckerMessage(
         .setColor(0x00FF00)
         .setTimestamp();
 
-    for (const giftCode of giftCodes) {
-        const expiration = giftCode.expiresAt
-            ? `<t:${Math.floor(new Date(giftCode.expiresAt).getTime() / 1000)}:F>`
-            : "No expiration";
-
-        embed.addFields(
-            {
-                name: "Gift Code",
-                value: giftCode.code,
-                inline: true,
-            },
-            {
-                name: "Expires",
-                value: expiration,
-                inline: true,
-            },
-        );
-    }
+    embed.addFields({
+        name: "Gift Codes",
+        value: giftCodes.length
+            ? giftCodes.map((giftCode) => {
+                const expiration = giftCode.expiresAt
+                    ? `<t:${Math.floor(new Date(giftCode.expiresAt).getTime() / 1000)}:F>`
+                    : "No expiration";
+                return `**${giftCode.code}** — Expires: ${expiration}`;
+            }).join("\n")
+            : "No gift codes available",
+        inline: false,
+    });
 
     if (footerText) {
         embed.setFooter({ text: footerText });
