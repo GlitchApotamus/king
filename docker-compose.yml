@@ -3,6 +3,7 @@ services:
     build: .
     image: bot:latest
     container_name: king
+    restart: always
     env_file:
       - .env
     networks:
