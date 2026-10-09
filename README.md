@@ -10,14 +10,13 @@ before starting the bot. Make sure `DATABASE_URL` is available in the container.
 for production deployments, use migrations when you need controlled schema changes.
 
 1.) Build
-```
-npm run build
+```bash
+#not required
+sern build
 ```
 2.) Run
-```
-node .
-```
-3.) Publish
-```
-npm run commands:publish
+```bash
+bun run db:gen
+bun run db:push
+bun run start
 ```
