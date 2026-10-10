@@ -20,8 +20,8 @@ export default commandModule({
         const logger = deps["@sern/logger"];
 
         await interaction.deferReply({ flags: 64 });
-
-        try {
+        return await interaction.editReply("Linking your game account is currently unavailable due to kingshot devs removing the API access may be restored in the future.");
+        /*try {
             const player = (await kingshotApi.getPlayerInfo(playerId)).data;
             const result = await prisma.$transaction(async (transaction) => {
                 const existingAccount = await transaction.account.findUnique({
@@ -73,6 +73,6 @@ export default commandModule({
             await interaction.editReply(
                 "Could not link that game account. Check the player ID and try again.",
             );
-        }
+        }*/
     },
 });
