@@ -1,6 +1,16 @@
 import { commandModule, CommandType } from "@sern/handler";
-import { ApplicationCommandOptionType, ChannelType, NewsChannel, TextChannel } from "discord.js";
+import {
+    ApplicationCommandOptionType,
+    ChannelType,
+    PermissionsBitField,
+} from "discord.js";
 import { upsertGiftCodeCheckerMessage } from "../utils/giftCodeChecker";
+
+const giftCodeChannelPermissions = [
+    PermissionsBitField.Flags.ViewChannel,
+    PermissionsBitField.Flags.SendMessages,
+    PermissionsBitField.Flags.EmbedLinks,
+];
 
 export default commandModule({
     name: "start",
@@ -19,10 +29,39 @@ export default commandModule({
                     required: true,
                 },
                 {
-                    type: ApplicationCommandOptionType.Channel,
-                    channel_types: [ChannelType.GuildText, ChannelType.GuildAnnouncement],
+                    type: ApplicationCommandOptionType.String,
                     name: "channel",
                     description: "Select the channel for the gift code checker",
+                    autocomplete: true,
+                    command: {
+                        execute: async (autocomplete) => {
+                            const guild = autocomplete.guild;
+                            const botMember = guild?.members.me;
+                            if (!guild || !botMember) {
+                                await autocomplete.respond([]);
+                                return;
+                            }
+
+                            const focused = autocomplete.options.getFocused().toLowerCase();
+                            const choices = guild.channels.cache
+                                .filter((channel) => (
+                                    channel.type === ChannelType.GuildText
+                                    || channel.type === ChannelType.GuildAnnouncement
+                                ))
+                                .filter((channel) => (
+                                    channel.permissionsFor(botMember)?.has(giftCodeChannelPermissions) ?? false
+                                ))
+                                .filter((channel) => channel.name.toLowerCase().includes(focused))
+                                .sort((a, b) => a.name.localeCompare(b.name))
+                                .first(25)
+                                .map((channel) => ({
+                                    name: `#${channel.name}`.slice(0, 100),
+                                    value: channel.id,
+                                }));
+
+                            await autocomplete.respond(choices);
+                        },
+                    },
                 }
             ]
         }
@@ -52,14 +91,28 @@ export default commandModule({
                         });
                         await interaction.editReply("Gift code checker has been disabled.");
                     } else {
-                        const channel = interaction.options.getChannel("channel") as TextChannel | NewsChannel | null;
-                        if (!channel) {
+                        const channelId = interaction.options.getString("channel", true);
+                        const channel = await interaction.guild?.channels.fetch(channelId);
+                        const botMember = interaction.guild?.members.me;
+                        if (
+                            !channel
+                            || !botMember
+                            || (channel.type !== ChannelType.GuildText
+                                && channel.type !== ChannelType.GuildAnnouncement)
+                        ) {
                             await interaction.editReply(
-                                "Select a text or announcement channel to enable the gift code checker.",
+                                "Select an available text or announcement channel from the autocomplete list.",
                             );
                             return;
                         }
 
+                        const permissions = channel.permissionsFor(botMember);
+                        if (!permissions?.has(giftCodeChannelPermissions)) {
+                            await interaction.editReply(
+                                "I need View Channel, Send Messages, and Embed Links permissions in that channel.",
+                            );
+                            return;
+                        }
 
                         const giftCodes = (await kingshotApi.getGiftCodes()).data.giftCodes;
                         const currentGuild = await prisma.guild.findUnique({
@@ -95,17 +148,15 @@ export default commandModule({
             await subs[subcommand]();
         } catch (error) {
             logger?.error({
-                message: `Start command failed for Discord user ${interaction.user.id}: ${
-                    error instanceof Error ? error.message : String(error)
-                }`,
+                message: `Start command failed for Discord user ${interaction.user.id}: ${error instanceof Error ? error.message : String(error)
+                    }`,
             });
             await interaction.editReply(
-                "The command could not be completed due to a temporary error. Please try again later.",
+                "The command could not be completed due to a temporary error. Please try again later. Make sure I have the necessary permissions for the channel.",
             ).catch((replyError: unknown) => {
                 logger?.error({
-                    message: `Could not send start command error response: ${
-                        replyError instanceof Error ? replyError.message : String(replyError)
-                    }`,
+                    message: `Could not send start command error response: ${replyError instanceof Error ? replyError.message : String(replyError)
+                        }`,
                 });
             });
         }
