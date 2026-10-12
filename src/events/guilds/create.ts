@@ -1,5 +1,11 @@
 import { eventModule, EventType, Services } from "@sern/handler";
-import { ChannelType, Events, PermissionsBitField } from "discord.js";
+import {
+    ChannelType,
+    DiscordAPIError,
+    EmbedBuilder,
+    Events,
+    PermissionsBitField,
+} from "discord.js";
 import { PrismaClientError } from "../../prisma";
 
 export default eventModule({
@@ -28,6 +34,7 @@ export default eventModule({
         const sendPermissions = [
             PermissionsBitField.Flags.ViewChannel,
             PermissionsBitField.Flags.SendMessages,
+            PermissionsBitField.Flags.EmbedLinks,
         ];
         const systemChannel = guild.systemChannel;
         const canSendTo = (channel: typeof systemChannel) =>
@@ -43,7 +50,7 @@ export default eventModule({
 
         if (!channel) {
             logger.info({
-                message: `Could not send setup instructions in ${guild.name}: no text channel is available with View Channel and Send Messages permissions.`,
+                message: `Could not send setup instructions in ${guild.name}: no text channel is available with View Channel, Send Messages, and Embed Links permissions.`,
             });
             return;
         }
@@ -64,12 +71,28 @@ export default eventModule({
                 : `**${managerRole.name}**`
             : "Server admins";
         const command = "</start gift-code-checker:1558244004917805118>";
-        const message = managerRole && !canMentionRole
-            ? `Thanks for adding King! ${roleAddress}, please run ${command} with \`enable: true\` and choose a channel to get started. I need View Channel, Send Messages, and Embed Links there. I couldn't notify the role directly because it isn't mentionable.`
-            : `Thanks for adding King! ${roleAddress}, run ${command} with \`enable: true\` and choose a channel to get started. I need View Channel, Send Messages, and Embed Links there.`;
+        const embed = new EmbedBuilder()
+            .setTitle("Getting started with King")
+            .setDescription([
+                "1. Run the command below with `enable: true`.",
+                "2. Choose the channel where the gift-code checker should post.",
+                "3. Make sure King has View Channel, Send Messages, and Embed Links permissions in that channel.",
+                "",
+                managerRole && !canMentionRole
+                    ? "The role was named but could not be notified directly because it isn't mentionable."
+                    : null,
+            ].filter(Boolean).join("\n"))
+            .addFields({
+                name: "Command",
+                value: command,
+            })
+            .setFooter({
+                text: "You can safely delete this message at any time, or wait for it to be deleted automatically after 30 minutes.",
+            });
 
-        await channel.send({
-            content: message,
+        const welcomeMessage = await channel.send({
+            content: `Thanks for adding King! ${roleAddress}`,
+            embeds: [embed],
             allowedMentions: {
                 roles: canMentionRole && managerRole ? [managerRole.id] : [],
             },
@@ -78,5 +101,15 @@ export default eventModule({
                 message: `Failed to send setup instructions in ${guild.name}: ${err.message}`,
             });
         });
+        if (!welcomeMessage) return;
+
+        setTimeout(() => {
+            void welcomeMessage.delete().catch((err: Error) => {
+                if (err instanceof DiscordAPIError && err.code === 10008) return;
+                logger.error({
+                    message: `Failed to delete setup instructions in ${guild.name}: ${err.message}`,
+                });
+            });
+        }, 30 * 60 * 1000);
     }
 });
