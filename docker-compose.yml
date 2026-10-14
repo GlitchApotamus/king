@@ -8,7 +8,10 @@ services:
       - .env
     networks:
       - db-net
+      - zenith-net
 
 networks:
   db-net:
+    external: true
+  zenith-net:
     external: true

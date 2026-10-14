@@ -5,7 +5,7 @@ import { upsertGiftCodeCheckerMessage } from "../utils/giftCodeChecker";
 
 export default scheduledTask({
     name: "giftCodeChecker",
-    trigger: "0 0,3,6,9,12,15,18,21 * * *", // Runs every 3 hours
+    trigger: "0 * * * *", // Runs every hour
     execute: async (_, { deps }) => {
         const [kingshotApi, { guild: guildModel }, client] = [deps['kingshot-api'], deps['prisma-client'], deps['@sern/client']];
         const logger = deps["@sern/logger"];
@@ -17,9 +17,8 @@ export default scheduledTask({
             guilds = await guildModel.findMany();
         } catch (error) {
             logger?.error({
-                message: `Gift code checker could not load codes or guilds: ${
-                    error instanceof Error ? error.message : String(error)
-                }`,
+                message: `Gift code checker could not load codes or guilds: ${error instanceof Error ? error.message : String(error)
+                    }`,
             });
             return;
         }
@@ -49,9 +48,8 @@ export default scheduledTask({
                 }
             } catch (error) {
                 logger?.error({
-                    message: `Gift code checker failed for guild ${guild.id}: ${
-                        error instanceof Error ? error.message : String(error)
-                    }`,
+                    message: `Gift code checker failed for guild ${guild.id}: ${error instanceof Error ? error.message : String(error)
+                        }`,
                 });
             }
         }

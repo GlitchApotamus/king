@@ -7,12 +7,14 @@ generator client {
 }
 
 model Guild {
-    id                   String   @id
-    name                 String
-    codeCheckerEnabled   Boolean  @default(false)
-    codeCheckerChannelId String?
-    codeCheckerMessageId String?
-    createdAt            DateTime @default(now())
+    id                        String   @id
+    name                      String
+    codeCheckerEnabled        Boolean  @default(false)
+    codeCheckerChannelId      String?
+    codeCheckerMessageId      String?
+    roleToPingId              String?
+    notifyOnNewCodeSubmission Boolean  @default(false)
+    createdAt                 DateTime @default(now())
 }
 
 model User {

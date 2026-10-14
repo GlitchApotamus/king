@@ -36,12 +36,16 @@ export function buildGiftCodeCheckerMessage(
         embed.setFooter({ text: footerText });
     }
 
-    const button = new ButtonBuilder()
-        .setCustomId("giftCodeCheck")
-        .setLabel("Check for New Gift Codes")
-        .setStyle(ButtonStyle.Primary);
+    const buttons = ["Check for New Gift Codes|giftCodeCheck", "Translate Message|translateMessage"].map((button) => {
+        const [label, customId] = button.split("|");
+        return new ButtonBuilder()
+            .setCustomId(customId)
+            .setLabel(label)
+            .setStyle(ButtonStyle.Primary)
+    })
+
     const components = [
-        new ActionRowBuilder<ButtonBuilder>().addComponents(button),
+        new ActionRowBuilder<ButtonBuilder>().addComponents(...buttons),
     ];
 
     return { embeds: [embed], components };
